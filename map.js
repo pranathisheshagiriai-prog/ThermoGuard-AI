@@ -1128,7 +1128,7 @@ function updateAllHotspotPopups() {
 // NASA FIRMS CSV
 // ============================================================
 
-fetch("../data/hotspots.csv")
+fetch("hotspots.csv")
 
     .then(
         response => {
@@ -1781,7 +1781,7 @@ setTimeout(
 // PERSISTENCE DATA
 // ============================================================
 
-fetch("../data/persistence_results.csv")
+fetch("persistence_results.csv")
 
     .then(
         response => {
