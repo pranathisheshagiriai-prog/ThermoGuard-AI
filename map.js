@@ -2,7 +2,7 @@
 // THERMOGUARD AI — INTELLIGENCE MAP
 // Complete corrected version
 // ============================================================
-
+    
 
 // ============================================================
 // MAP INITIALIZATION
@@ -1128,7 +1128,7 @@ function updateAllHotspotPopups() {
 // NASA FIRMS CSV
 // ============================================================
 
-fetch("hotspots.csv")
+fetch("./hotspots.csv")
 
     .then(
         response => {
