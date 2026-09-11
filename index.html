@@ -1,0 +1,3077 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ThermoGuard AI — Intelligence Command Center</title>
+
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+
+        /* =========================================================
+           GLOBAL
+        ========================================================= */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+
+            font-family:
+                Inter,
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            background: #020611;
+            color: #f8fafc;
+        }
+
+        body {
+            position: relative;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+
+        /* =========================================================
+           MAIN COMMAND CENTER
+        ========================================================= */
+
+        #commandCenter {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 50% 48%,
+                    rgba(7, 31, 61, 0.45),
+                    rgba(2, 6, 17, 0.95) 65%
+                );
+        }
+
+
+        /* =========================================================
+           TOP HEADER
+        ========================================================= */
+
+        .top-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+
+            height: 68px;
+
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 28px;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(2, 7, 18, 0.98),
+                    rgba(3, 9, 21, 0.94)
+                );
+
+            border-bottom:
+                1px solid rgba(71, 109, 151, 0.28);
+
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, 0.28);
+        }
+
+
+        /* BRAND */
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            min-width: 0;
+        }
+
+        .brand-fire {
+            width: 38px;
+            height: 38px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 28px;
+
+            filter:
+                drop-shadow(
+                    0 0 12px rgba(255, 90, 20, 0.65)
+                );
+        }
+
+        .brand-name {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.8px;
+            white-space: nowrap;
+        }
+
+        .brand-name .thermo {
+            color: #f8fafc;
+        }
+
+        .brand-name .guard {
+            color: #ff7517;
+        }
+
+        .brand-name .ai {
+            color: #e2e8f0;
+        }
+
+        .brand-divider {
+            height: 28px;
+            width: 1px;
+
+            background:
+                rgba(148, 163, 184, 0.35);
+
+            margin-left: 4px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+
+            color: #7d8da6;
+
+            white-space: nowrap;
+        }
+
+
+        /* SYSTEM */
+
+        .system-status {
+            min-width: 172px;
+            height: 44px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            padding: 0 17px;
+
+            border:
+                1px solid rgba(0, 255, 157, 0.22);
+
+            border-radius: 12px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(0, 255, 157, 0.055),
+                    rgba(0, 25, 24, 0.42)
+                );
+
+            box-shadow:
+                inset 0 0 20px rgba(0, 255, 157, 0.025);
+        }
+
+        .system-top {
+            display: flex;
+            align-items: center;
+
+            gap: 9px;
+
+            font-size: 12px;
+            font-weight: 900;
+
+            letter-spacing: 1px;
+
+            color: #00e58c;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #00e58c;
+
+            box-shadow:
+                0 0 10px rgba(0, 229, 140, 0.9);
+
+            animation:
+                pulseGlow 1.8s infinite;
+        }
+
+        .system-bottom {
+            margin-left: 17px;
+            margin-top: 2px;
+
+            font-size: 8px;
+
+            letter-spacing: 1.2px;
+
+            color: #607089;
+        }
+
+
+        /* =========================================================
+           MAP / GLOBE STAGE
+        ========================================================= */
+
+        #mapStage {
+            position: absolute;
+
+            inset: 68px 0 34px 0;
+
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 50% 48%,
+                    rgba(8, 46, 82, 0.35),
+                    rgba(2, 7, 18, 0.95) 67%
+                );
+
+            perspective: 1400px;
+        }
+
+
+        /* Atmospheric glow */
+
+        #mapStage::before {
+            content: "";
+
+            position: absolute;
+
+            width: min(78vw, 900px);
+            height: min(78vw, 900px);
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(0, 131, 255, 0.17) 0%,
+                    rgba(0, 80, 160, 0.08) 38%,
+                    transparent 70%
+                );
+
+            filter: blur(20px);
+
+            pointer-events: none;
+
+            z-index: 0;
+        }
+
+
+        /* =========================================================
+           GLOBE SHELL
+        ========================================================= */
+
+        #globeShell {
+
+            position: absolute;
+
+            width: min(73vw, 850px);
+            height: min(73vw, 850px);
+
+            max-width: 850px;
+            max-height: 850px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotateY(0deg);
+
+            transform-style: preserve-3d;
+
+            border-radius: 50%;
+
+            overflow: hidden;
+
+            z-index: 1;
+
+            background:
+                radial-gradient(
+                    circle at 38% 30%,
+                    #17456d,
+                    #031224 58%,
+                    #010713 100%
+                );
+
+            border:
+                1px solid rgba(77, 183, 255, 0.4);
+
+            box-shadow:
+                0 0 0 2px rgba(0, 153, 255, 0.04),
+                0 0 35px rgba(0, 132, 255, 0.18),
+                0 0 90px rgba(0, 81, 170, 0.16),
+                inset 25px 20px 80px rgba(255, 255, 255, 0.04),
+                inset -45px -35px 100px rgba(0, 0, 0, 0.72);
+
+            /* GLOBE ROTATION */
+            animation:
+                globeSpin 24s linear infinite;
+
+            will-change: transform;
+        }
+
+
+        /* =========================================================
+           GLOBE ROTATION
+        ========================================================= */
+
+        @keyframes globeSpin {
+
+            0% {
+                transform:
+                    translate(-50%, -50%)
+                    rotateY(-8deg);
+            }
+
+            25% {
+                transform:
+                    translate(-50%, -50%)
+                    rotateY(0deg);
+            }
+
+            50% {
+                transform:
+                    translate(-50%, -50%)
+                    rotateY(8deg);
+            }
+
+            75% {
+                transform:
+                    translate(-50%, -50%)
+                    rotateY(0deg);
+            }
+
+            100% {
+                transform:
+                    translate(-50%, -50%)
+                    rotateY(-8deg);
+            }
+        }
+
+
+        /* Pause while inspecting */
+
+        #globeShell:hover {
+            animation-play-state: paused;
+        }
+
+
+        /* =========================================================
+           GLOBE EDGE
+        ========================================================= */
+
+        #globeShell::before {
+
+            content: "";
+
+            position: absolute;
+
+            inset: 0;
+
+            border-radius: 50%;
+
+            z-index: 500;
+
+            pointer-events: none;
+
+            box-shadow:
+                inset 0 0 35px rgba(43, 174, 255, 0.25),
+                inset 20px 0 80px rgba(0, 155, 255, 0.07),
+                inset -35px 0 100px rgba(0, 0, 0, 0.55);
+        }
+
+
+        /* =========================================================
+           GLOBE SHINE
+        ========================================================= */
+
+        #globeShell::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 65%;
+            height: 35%;
+
+            left: 8%;
+            top: 2%;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(255, 255, 255, 0.13),
+                    transparent 65%
+                );
+
+            transform:
+                rotate(-22deg);
+
+            filter: blur(9px);
+
+            z-index: 501;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================================
+           MAP
+        ========================================================= */
+
+        #map {
+            width: 100%;
+            height: 100%;
+
+            background: #020812;
+        }
+
+
+        /* =========================================================
+           LEAFLET TILE EFFECT
+        ========================================================= */
+
+        .leaflet-tile {
+
+            filter:
+                brightness(0.72)
+                contrast(1.08)
+                saturate(0.82);
+        }
+
+        .leaflet-container {
+            background: #020812;
+        }
+
+
+        /* =========================================================
+           ATTRIBUTION
+        ========================================================= */
+
+        .leaflet-control-attribution {
+
+            font-size: 8px !important;
+
+            opacity: 0.5;
+
+            background:
+                rgba(0, 0, 0, 0.35) !important;
+
+            color: #8fa2ba !important;
+        }
+
+        .leaflet-control-attribution a {
+            color: #9eb5ce !important;
+        }
+
+
+        /* =========================================================
+           KPI SHELF
+        ========================================================= */
+
+        #kpiShelf {
+
+            position: absolute;
+
+            top: 82px;
+
+            left: 50%;
+
+            transform:
+                translateX(-50%);
+
+            width:
+                min(82vw, 1080px);
+
+            z-index: 900;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(6, minmax(0, 1fr));
+
+            gap: 9px;
+        }
+
+
+        .kpi-card {
+
+            position: relative;
+
+            min-height: 59px;
+
+            padding: 10px 12px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+            cursor: pointer;
+
+            border-radius: 11px;
+
+            border:
+                1px solid rgba(65, 103, 143, 0.38);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(8, 21, 40, 0.94),
+                    rgba(3, 12, 27, 0.94)
+                );
+
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.18);
+
+            transition:
+                transform 0.18s ease,
+                border-color 0.18s ease,
+                background 0.18s ease;
+        }
+
+        .kpi-card:hover {
+
+            transform:
+                translateY(-2px);
+
+            border-color:
+                rgba(62, 170, 255, 0.55);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(12, 31, 56, 0.98),
+                    rgba(4, 15, 31, 0.98)
+                );
+        }
+
+        .kpi-card::before {
+
+            content: "";
+
+            position: absolute;
+
+            top: -1px;
+
+            left: 14px;
+            right: 14px;
+
+            height: 2px;
+
+            border-radius: 10px;
+
+            background:
+                var(--kpi-color, #3aa8ff);
+        }
+
+        .kpi-title {
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+            letter-spacing: 1px;
+
+            color: #8798af;
+
+            white-space: nowrap;
+        }
+
+        .kpi-value-row {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            margin-top: 4px;
+        }
+
+        .kpi-value {
+
+            font-size: 21px;
+
+            line-height: 1;
+
+            font-weight: 950;
+        }
+
+        .kpi-icon {
+
+            font-size: 13px;
+
+            opacity: 0.85;
+        }
+
+
+        /* KPI colors */
+
+        .kpi-hotspots {
+            --kpi-color: #7090b5;
+        }
+
+        .kpi-high {
+            --kpi-color: #ff3340;
+        }
+
+        .kpi-medium {
+            --kpi-color: #ffae00;
+        }
+
+        .kpi-critical {
+            --kpi-color: #ff3340;
+        }
+
+        .kpi-industrial {
+            --kpi-color: #00bfff;
+        }
+
+        .kpi-persistent {
+            --kpi-color: #ffe000;
+        }
+
+
+        #hotspotCount {
+            color: #f1f5f9;
+        }
+
+        #highRiskCount {
+            color: #ff3946;
+        }
+
+        #mediumRiskCount {
+            color: #ffb000;
+        }
+
+        #criticalCount {
+            color: #ff3c45;
+        }
+
+        #industrialCount {
+            color: #00bfff;
+        }
+
+        #persistentCount {
+            color: #ffe000;
+        }
+
+
+        /* =========================================================
+           FLOATING SHELVES
+        ========================================================= */
+
+        .floating-shelf {
+
+            position: absolute;
+
+            z-index: 800;
+
+            border-radius: 13px;
+
+            border:
+                1px solid rgba(49, 108, 156, 0.48);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(5, 17, 32, 0.94),
+                    rgba(2, 9, 20, 0.94)
+                );
+
+            box-shadow:
+                0 12px 35px rgba(0, 0, 0, 0.34),
+                inset 0 0 25px rgba(30, 140, 220, 0.025);
+
+            backdrop-filter: blur(12px);
+
+            overflow: hidden;
+        }
+
+        .shelf-header {
+
+            height: 47px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 13px;
+
+            cursor: pointer;
+
+            border-bottom:
+                1px solid rgba(61, 88, 117, 0.24);
+        }
+
+        .shelf-title {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            font-size: 10px;
+
+            font-weight: 950;
+
+            letter-spacing: 1px;
+
+            color: #e7edf5;
+        }
+
+        .shelf-live {
+
+            color: #00ed91;
+
+            font-size: 8px;
+
+            letter-spacing: 1px;
+        }
+
+        .shelf-arrow {
+
+            color: #8294aa;
+
+            font-size: 15px;
+
+            transition:
+                transform 0.2s ease;
+        }
+
+        .shelf-body {
+
+            max-height: 380px;
+
+            overflow: hidden;
+
+            transition:
+                max-height 0.28s ease,
+                opacity 0.2s ease;
+        }
+
+        .floating-shelf.collapsed .shelf-body {
+
+            max-height: 0;
+
+            opacity: 0;
+        }
+
+        .floating-shelf.collapsed .shelf-arrow {
+
+            transform:
+                rotate(-90deg);
+        }
+
+
+        /* =========================================================
+           LIVE THREAT SHELF
+        ========================================================= */
+
+        #threatShelf {
+
+            left: 18px;
+
+            top: 165px;
+
+            width: 278px;
+        }
+
+        #threatFeedList {
+
+            max-height: 340px;
+
+            overflow-y: auto;
+        }
+
+        #threatFeedList::-webkit-scrollbar {
+
+            width: 3px;
+        }
+
+        #threatFeedList::-webkit-scrollbar-thumb {
+
+            background: #31506b;
+
+            border-radius: 5px;
+        }
+
+
+        /* =========================================================
+           FIRMS SHELF
+        ========================================================= */
+
+        #firmsShelf {
+
+            right: 18px;
+
+            top: 165px;
+
+            width: 245px;
+        }
+
+        .firms-content {
+
+            padding: 12px 14px 14px;
+        }
+
+        .firms-row {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 7px 0;
+
+            border-bottom:
+                1px solid rgba(78, 102, 128, 0.16);
+        }
+
+        .firms-row:last-child {
+
+            border-bottom: 0;
+        }
+
+        .firms-label {
+
+            font-size: 9px;
+
+            color: #72839b;
+        }
+
+        .firms-value {
+
+            font-size: 9px;
+
+            font-weight: 850;
+
+            color: #dce6f2;
+        }
+
+        .firms-online {
+
+            color: #00ed91;
+        }
+
+
+        /* =========================================================
+           THERMAL RISK SHELF
+        ========================================================= */
+
+        #riskShelf {
+
+            left: 18px;
+
+            bottom: 72px;
+
+            width: 188px;
+        }
+
+        .risk-content {
+
+            padding: 11px 14px 13px;
+        }
+
+        .risk-row {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 9px;
+
+            margin: 8px 0;
+
+            font-size: 9px;
+
+            color: #94a3b8;
+        }
+
+        .risk-dot {
+
+            width: 8px;
+
+            height: 8px;
+
+            border-radius: 50%;
+        }
+
+        .risk-high {
+
+            background: #ff3838;
+
+            box-shadow:
+                0 0 9px rgba(255, 56, 56, 0.65);
+        }
+
+        .risk-medium {
+
+            background: #ffae00;
+
+            box-shadow:
+                0 0 9px rgba(255, 174, 0, 0.55);
+        }
+
+        .risk-low {
+
+            background: #00db73;
+
+            box-shadow:
+                0 0 9px rgba(0, 219, 115, 0.5);
+        }
+
+
+        /* =========================================================
+           MISSION STATUS
+        ========================================================= */
+
+        #missionPanel {
+
+            position: absolute;
+
+            right: 18px;
+
+            bottom: 72px;
+
+            width: 280px;
+
+            z-index: 850;
+
+            border-radius: 14px;
+
+            border:
+                1px solid rgba(56, 104, 143, 0.48);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(5, 15, 29, 0.96),
+                    rgba(2, 8, 18, 0.96)
+                );
+
+            box-shadow:
+                0 15px 38px rgba(0, 0, 0, 0.4);
+
+            backdrop-filter: blur(15px);
+        }
+
+        .mission-header {
+
+            height: 45px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 13px;
+
+            cursor: pointer;
+
+            border-bottom:
+                1px solid rgba(62, 91, 120, 0.22);
+        }
+
+        .mission-title {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            font-size: 10px;
+
+            font-weight: 950;
+
+            letter-spacing: 1px;
+        }
+
+        .mission-title-icon {
+
+            color: #ff7b18;
+        }
+
+        .mission-live {
+
+            color: #00e58c;
+
+            font-size: 8px;
+
+            font-weight: 900;
+
+            letter-spacing: 0.8px;
+        }
+
+        .mission-content {
+
+            padding: 11px;
+        }
+
+        .mission-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 6px;
+        }
+
+        .mission-cell {
+
+            min-height: 53px;
+
+            padding: 8px;
+
+            border-radius: 9px;
+
+            background:
+                rgba(7, 20, 37, 0.8);
+
+            border:
+                1px solid rgba(64, 96, 128, 0.24);
+        }
+
+        .mission-label {
+
+            font-size: 7px;
+
+            font-weight: 900;
+
+            letter-spacing: 0.7px;
+
+            color: #70829a;
+        }
+
+        .mission-value {
+
+            margin-top: 5px;
+
+            font-size: 16px;
+
+            line-height: 1;
+
+            font-weight: 950;
+        }
+
+        #missionCritical {
+            color: #ff3d45;
+        }
+
+        #missionHigh {
+            color: #ff8b21;
+        }
+
+        #missionPersistent {
+            color: #ffe000;
+        }
+
+        #missionIndustrial {
+            color: #00bfff;
+        }
+
+        #missionFirms {
+            color: #f1f5f9;
+        }
+
+        #missionAnalysis {
+            color: #f1f5f9;
+        }
+
+        .mission-footer {
+
+            margin-top: 9px;
+
+            padding-top: 9px;
+
+            border-top:
+                1px solid rgba(72, 98, 125, 0.2);
+
+            display: flex;
+
+            justify-content: space-between;
+
+            font-size: 7px;
+
+            font-weight: 900;
+
+            letter-spacing: 0.8px;
+
+            color: #73849b;
+        }
+
+        .mission-active {
+
+            color: #00e58c;
+        }
+
+
+        /* =========================================================
+           BOTTOM INTELLIGENCE BAR
+        ========================================================= */
+
+        #bottomIntelligence {
+
+            position: absolute;
+
+            left: 50%;
+
+            bottom: 47px;
+
+            transform:
+                translateX(-50%);
+
+            z-index: 900;
+
+            min-width: 455px;
+
+            height: 38px;
+
+            padding: 0 17px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 12px;
+
+            border-radius: 22px;
+
+            border:
+                1px solid rgba(57, 113, 156, 0.45);
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(3, 14, 27, 0.95),
+                    rgba(5, 21, 38, 0.96),
+                    rgba(3, 14, 27, 0.95)
+                );
+
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, 0.28);
+
+            backdrop-filter: blur(10px);
+        }
+
+        .intel-active {
+
+            color: #00e58c;
+
+            font-size: 8px;
+
+            font-weight: 950;
+
+            letter-spacing: 0.8px;
+        }
+
+        .intel-separator {
+
+            color: #40546b;
+
+            font-size: 10px;
+        }
+
+        .intel-item {
+
+            color: #71839b;
+
+            font-size: 8px;
+
+            font-weight: 800;
+
+            letter-spacing: 0.7px;
+        }
+
+
+        /* =========================================================
+           BOTTOM STATUS BAR
+        ========================================================= */
+
+        #statusBar {
+
+            position: absolute;
+
+            left: 0;
+
+            right: 0;
+
+            bottom: 0;
+
+            height: 34px;
+
+            z-index: 1000;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                rgba(1, 6, 15, 0.96);
+
+            border-top:
+                1px solid rgba(64, 90, 117, 0.23);
+
+            color: #64758c;
+
+            font-size: 8px;
+
+            font-weight: 800;
+
+            letter-spacing: 0.9px;
+        }
+
+
+        /* =========================================================
+           MAP CONTROLS
+        ========================================================= */
+
+        .leaflet-control-zoom {
+
+            border:
+                1px solid rgba(58, 111, 151, 0.45) !important;
+
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .leaflet-control-zoom a {
+
+            width: 32px !important;
+
+            height: 32px !important;
+
+            line-height: 32px !important;
+
+            color: #dce7f4 !important;
+
+            background:
+                rgba(3, 15, 28, 0.9) !important;
+
+            border-bottom:
+                1px solid rgba(58, 111, 151, 0.25) !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+
+            background:
+                rgba(8, 32, 53, 0.95) !important;
+        }
+
+
+        /* =========================================================
+           GLOBE DECORATIVE ORBIT
+        ========================================================= */
+
+        #globeOrbit {
+
+            position: absolute;
+
+            width: min(76vw, 885px);
+
+            height: min(29vw, 340px);
+
+            left: 50%;
+
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(-16deg);
+
+            border-radius: 50%;
+
+            border:
+                1px solid rgba(54, 171, 255, 0.13);
+
+            z-index: 2;
+
+            pointer-events: none;
+
+            animation:
+                orbitPulse 7s ease-in-out infinite;
+        }
+
+        #globeOrbit::after {
+
+            content: "";
+
+            position: absolute;
+
+            inset: 16px 0;
+
+            border-radius: 50%;
+
+            border:
+                1px solid rgba(54, 171, 255, 0.07);
+        }
+
+
+        @keyframes orbitPulse {
+
+            0%,
+            100% {
+                opacity: 0.55;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+
+        /* =========================================================
+           GLOBE SHADOW
+        ========================================================= */
+
+        #globeShadow {
+
+            position: absolute;
+
+            width: min(58vw, 680px);
+
+            height: 55px;
+
+            left: 50%;
+
+            bottom: 4%;
+
+            transform:
+                translateX(-50%);
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(0, 0, 0, 0.55),
+                    transparent 70%
+                );
+
+            filter: blur(12px);
+
+            z-index: 0;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 1100px) {
+
+            .brand-subtitle {
+                display: none;
+            }
+
+            .brand-divider {
+                display: none;
+            }
+
+            #kpiShelf {
+
+                width:
+                    calc(100vw - 230px);
+            }
+
+            .kpi-title {
+                font-size: 7px;
+            }
+
+            .kpi-value {
+                font-size: 18px;
+            }
+
+            #threatShelf {
+                width: 245px;
+            }
+
+            #firmsShelf {
+                width: 215px;
+            }
+
+            #missionPanel {
+                width: 250px;
+            }
+        }
+
+
+        @media (max-width: 800px) {
+
+            .top-header {
+
+                height: 58px;
+
+                padding: 0 13px;
+            }
+
+            .brand-fire {
+                font-size: 23px;
+            }
+
+            .brand-name {
+                font-size: 19px;
+            }
+
+            .system-status {
+
+                min-width: 132px;
+
+                height: 38px;
+            }
+
+            .system-bottom {
+                display: none;
+            }
+
+            #mapStage {
+
+                inset:
+                    58px 0 32px 0;
+            }
+
+            #kpiShelf {
+
+                top: 70px;
+
+                width:
+                    calc(100vw - 18px);
+
+                grid-template-columns:
+                    repeat(3, 1fr);
+
+                gap: 5px;
+            }
+
+            .kpi-card {
+
+                min-height: 48px;
+
+                padding: 7px 9px;
+            }
+
+            .kpi-title {
+                font-size: 6px;
+            }
+
+            .kpi-value {
+                font-size: 16px;
+            }
+
+            .kpi-icon {
+                display: none;
+            }
+
+            #globeShell {
+
+                width:
+                    min(88vw, 600px);
+
+                height:
+                    min(88vw, 600px);
+
+                top: 53%;
+
+                animation-duration:
+                    28s;
+            }
+
+            #globeOrbit {
+                display: none;
+            }
+
+            #globeShadow {
+
+                width: 65vw;
+            }
+
+            #threatShelf {
+
+                left: 8px;
+
+                top: 150px;
+
+                width: 205px;
+            }
+
+            #firmsShelf {
+
+                right: 8px;
+
+                top: 150px;
+
+                width: 190px;
+            }
+
+            #missionPanel {
+
+                right: 8px;
+
+                bottom: 53px;
+
+                width: 240px;
+            }
+
+            #riskShelf {
+
+                left: 8px;
+
+                bottom: 53px;
+
+                width: 160px;
+            }
+
+            #bottomIntelligence {
+                display: none;
+            }
+
+            #statusBar {
+                height: 32px;
+            }
+        }
+
+
+        @media (max-width: 560px) {
+
+            .brand-name {
+                font-size: 17px;
+            }
+
+            .system-status {
+
+                min-width: 108px;
+
+                padding: 0 10px;
+            }
+
+            .system-top {
+                font-size: 9px;
+            }
+
+            #kpiShelf {
+
+                grid-template-columns:
+                    repeat(3, 1fr);
+            }
+
+            .kpi-title {
+
+                letter-spacing:
+                    0.5px;
+            }
+
+            #threatShelf {
+                width: 170px;
+            }
+
+            #firmsShelf {
+                width: 155px;
+            }
+
+            #missionPanel {
+                width: 220px;
+            }
+
+            #riskShelf {
+                width: 145px;
+            }
+
+            #globeShell {
+
+                width: 92vw;
+
+                height: 92vw;
+            }
+        }
+
+
+        /* =========================================================
+           ANIMATION
+        ========================================================= */
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                opacity: 0.65;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+
+        /* =========================================================
+           REDUCED MOTION ACCESSIBILITY
+        ========================================================= */
+
+        @media (prefers-reduced-motion: reduce) {
+
+            #globeShell,
+            #globeOrbit,
+            .status-dot {
+                animation: none;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<div id="commandCenter">
+
+
+    <!-- =========================================================
+         TOP HEADER
+    ========================================================== -->
+
+    <header class="top-header">
+
+        <div class="brand-area">
+
+            <div class="brand-fire">
+                🔥
+            </div>
+
+            <div class="brand-name">
+
+                <span class="thermo">
+                    Thermo
+                </span>
+
+                <span class="guard">
+                    Guard
+                </span>
+
+                <span class="ai">
+                    AI
+                </span>
+
+            </div>
+
+            <div class="brand-divider"></div>
+
+            <div class="brand-subtitle">
+                INDUSTRIAL FIRE &amp; PERSISTENT THERMAL SOURCE DETECTION
+            </div>
+
+        </div>
+
+
+        <div class="system-status">
+
+            <div class="system-top">
+
+                <span class="status-dot"></span>
+
+                SYSTEM ONLINE
+
+            </div>
+
+            <div class="system-bottom">
+                REAL-TIME MONITORING
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =========================================================
+         MAP STAGE
+    ========================================================== -->
+
+    <main id="mapStage">
+
+
+        <!-- Decorative orbit -->
+
+        <div id="globeOrbit"></div>
+
+
+        <!-- Globe -->
+
+        <div id="globeShell">
+
+            <div id="map"></div>
+
+        </div>
+
+
+        <!-- Globe shadow -->
+
+        <div id="globeShadow"></div>
+
+
+
+        <!-- =====================================================
+             KPI SHELF
+        ====================================================== -->
+
+        <section id="kpiShelf">
+
+
+            <!-- TOTAL HOTSPOTS -->
+
+            <div
+                class="kpi-card kpi-hotspots"
+                data-kpi="hotspots"
+            >
+
+                <div class="kpi-title">
+                    TOTAL HOTSPOTS
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="hotspotCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        🔥
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- HIGH RISK -->
+
+            <div
+                class="kpi-card kpi-high"
+                data-kpi="high"
+            >
+
+                <div class="kpi-title">
+                    HIGH RISK
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="highRiskCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        🔴
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- MEDIUM RISK -->
+
+            <div
+                class="kpi-card kpi-medium"
+                data-kpi="medium"
+            >
+
+                <div class="kpi-title">
+                    MEDIUM RISK
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="mediumRiskCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        🟠
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- CRITICAL -->
+
+            <div
+                class="kpi-card kpi-critical"
+                data-kpi="critical"
+            >
+
+                <div class="kpi-title">
+                    CRITICAL THREATS
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="criticalCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        ⚠
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- INDUSTRIAL -->
+
+            <div
+                class="kpi-card kpi-industrial"
+                data-kpi="industrial"
+            >
+
+                <div class="kpi-title">
+                    INDUSTRIAL PROXIMITY
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="industrialCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        🏭
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- PERSISTENT -->
+
+            <div
+                class="kpi-card kpi-persistent"
+                data-kpi="persistent"
+            >
+
+                <div class="kpi-title">
+                    PERSISTENT SOURCES
+                </div>
+
+                <div class="kpi-value-row">
+
+                    <div
+                        class="kpi-value"
+                        id="persistentCount"
+                    >
+                        0
+                    </div>
+
+                    <div class="kpi-icon">
+                        ♨
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             LIVE THREATS SHELF
+        ====================================================== -->
+
+        <section
+            id="threatShelf"
+            class="floating-shelf collapsed"
+        >
+
+            <div
+                class="shelf-header"
+                id="threatShelfHeader"
+            >
+
+                <div class="shelf-title">
+
+                    ☰
+
+                    <span>
+                        LIVE THREATS
+                    </span>
+
+                    <span class="shelf-live">
+                        ● LIVE
+                    </span>
+
+                </div>
+
+                <div class="shelf-arrow">
+                    ›
+                </div>
+
+            </div>
+
+
+            <div class="shelf-body">
+
+                <div id="threatFeedList"></div>
+
+                <div
+                    style="
+                        padding: 9px 13px;
+                        border-top: 1px solid rgba(67,94,123,0.2);
+                        display:flex;
+                        justify-content:space-between;
+                        font-size:7px;
+                        font-weight:900;
+                        letter-spacing:.8px;
+                        color:#697b92;
+                    "
+                >
+
+                    <span>
+                        ACTIVE EVENTS
+                    </span>
+
+                    <span id="feedEventCount">
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             FIRMS SHELF
+        ====================================================== -->
+
+        <section
+            id="firmsShelf"
+            class="floating-shelf collapsed"
+        >
+
+            <div
+                class="shelf-header"
+                id="firmsShelfHeader"
+            >
+
+                <div class="shelf-title">
+
+                    🔥
+
+                    <span>
+                        FIRMS
+                    </span>
+
+                    <span class="shelf-live">
+                        ● LIVE
+                    </span>
+
+                </div>
+
+                <div class="shelf-arrow">
+                    ›
+                </div>
+
+            </div>
+
+
+            <div class="shelf-body">
+
+                <div class="firms-content">
+
+
+                    <div class="firms-row">
+
+                        <span class="firms-label">
+                            DATA SOURCE
+                        </span>
+
+                        <span class="firms-value">
+                            NASA FIRMS
+                        </span>
+
+                    </div>
+
+
+                    <div class="firms-row">
+
+                        <span class="firms-label">
+                            SATELLITE
+                        </span>
+
+                        <span class="firms-value">
+                            NOAA-21
+                        </span>
+
+                    </div>
+
+
+                    <div class="firms-row">
+
+                        <span class="firms-label">
+                            INSTRUMENT
+                        </span>
+
+                        <span class="firms-value">
+                            VIIRS
+                        </span>
+
+                    </div>
+
+
+                    <div class="firms-row">
+
+                        <span class="firms-label">
+                            HOTSPOTS
+                        </span>
+
+                        <span
+                            class="firms-value"
+                            id="firmsHotspotCount"
+                        >
+                            0
+                        </span>
+
+                    </div>
+
+
+                    <div class="firms-row">
+
+                        <span class="firms-label">
+                            LINK STATUS
+                        </span>
+
+                        <span class="firms-value firms-online">
+                            ONLINE
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             THERMAL RISK SHELF
+        ====================================================== -->
+
+        <section
+            id="riskShelf"
+            class="floating-shelf"
+        >
+
+            <div
+                class="shelf-header"
+                id="riskShelfHeader"
+            >
+
+                <div class="shelf-title">
+                    THERMAL RISK
+                </div>
+
+                <div class="shelf-arrow">
+                    ›
+                </div>
+
+            </div>
+
+
+            <div class="shelf-body">
+
+                <div class="risk-content">
+
+
+                    <div class="risk-row">
+
+                        <span class="risk-dot risk-high"></span>
+
+                        HIGH
+
+                    </div>
+
+
+                    <div class="risk-row">
+
+                        <span class="risk-dot risk-medium"></span>
+
+                        MEDIUM
+
+                    </div>
+
+
+                    <div class="risk-row">
+
+                        <span class="risk-dot risk-low"></span>
+
+                        LOW
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             MISSION STATUS
+        ====================================================== -->
+
+        <section id="missionPanel">
+
+
+            <div
+                class="mission-header"
+                id="missionHeader"
+            >
+
+                <div class="mission-title">
+
+                    <span class="mission-title-icon">
+                        ◆
+                    </span>
+
+                    MISSION STATUS
+
+                </div>
+
+                <div class="mission-live">
+                    ● ANALYSIS LIVE
+                </div>
+
+            </div>
+
+
+            <div class="mission-content">
+
+
+                <div class="mission-grid">
+
+
+                    <!-- Critical -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            CRITICAL
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionCritical"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+
+                    <!-- High -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            HIGH PRIORITY
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionHigh"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+
+                    <!-- Persistent -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            PERSISTENT
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionPersistent"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+
+                    <!-- Industrial -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            INDUSTRIAL
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionIndustrial"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+
+                    <!-- FIRMS -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            FIRMS
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionFirms"
+                        >
+                            ONLINE
+                        </div>
+
+                    </div>
+
+
+                    <!-- Engine -->
+
+                    <div class="mission-cell">
+
+                        <div class="mission-label">
+                            ENGINE
+                        </div>
+
+                        <div
+                            class="mission-value"
+                            id="missionAnalysis"
+                        >
+                            ACTIVE
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="mission-footer">
+
+                    <span class="mission-active">
+                        ● THERMAL INTELLIGENCE ENGINE
+                    </span>
+
+                    <span>
+                        TG-AI CORE
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             BOTTOM INTELLIGENCE
+        ====================================================== -->
+
+        <div id="bottomIntelligence">
+
+            <span class="intel-active">
+                ● AI ANALYSIS ACTIVE
+            </span>
+
+            <span class="intel-separator">
+                ·
+            </span>
+
+            <span class="intel-item">
+                NASA FIRMS
+            </span>
+
+            <span class="intel-separator">
+                ·
+            </span>
+
+            <span class="intel-item">
+                OSM INDUSTRIAL CONTEXT
+            </span>
+
+            <span class="intel-separator">
+                ·
+            </span>
+
+            <span class="intel-active">
+                ● SYSTEM ONLINE
+            </span>
+
+        </div>
+
+
+    </main>
+
+
+
+    <!-- =========================================================
+         STATUS BAR
+    ========================================================== -->
+
+    <footer id="statusBar">
+
+        THERMOGUARD AI
+
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+
+        SATELLITE THERMAL INTELLIGENCE
+
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+
+        REAL-TIME INDUSTRIAL FIRE MONITORING
+
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+
+        PROTOTYPE ANALYSIS ENGINE
+
+    </footer>
+
+
+</div>
+
+
+
+<!-- =============================================================
+     LEAFLET
+============================================================= -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
+
+<!-- =============================================================
+     YOUR EXISTING MAP.JS
+============================================================= -->
+
+<script src="map.js"></script>
+
+
+
+<!-- =============================================================
+     COMMAND CENTER UI LOGIC
+============================================================= -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+
+        /* =====================================================
+           SHELF HELPERS
+        ====================================================== */
+
+        const threatShelf =
+            document.getElementById(
+                "threatShelf"
+            );
+
+        const firmsShelf =
+            document.getElementById(
+                "firmsShelf"
+            );
+
+        const riskShelf =
+            document.getElementById(
+                "riskShelf"
+            );
+
+        const missionPanel =
+            document.getElementById(
+                "missionPanel"
+            );
+
+
+        function collapseShelf(panel) {
+
+            if (!panel) return;
+
+            panel.classList.add(
+                "collapsed"
+            );
+        }
+
+
+        function expandShelf(panel) {
+
+            if (!panel) return;
+
+            panel.classList.remove(
+                "collapsed"
+            );
+        }
+
+
+        function closeOtherShelves(
+            activePanel
+        ) {
+
+            [
+                threatShelf,
+                firmsShelf,
+                riskShelf
+            ].forEach(
+                function (panel) {
+
+                    if (
+                        panel &&
+                        panel !== activePanel
+                    ) {
+
+                        collapseShelf(
+                            panel
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+
+        /* =====================================================
+           THREAT SHELF
+        ====================================================== */
+
+        const threatHeader =
+            document.getElementById(
+                "threatShelfHeader"
+            );
+
+        if (threatHeader) {
+
+            threatHeader.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                    const isCollapsed =
+                        threatShelf.classList.contains(
+                            "collapsed"
+                        );
+
+                    closeOtherShelves(
+                        threatShelf
+                    );
+
+                    if (isCollapsed) {
+
+                        expandShelf(
+                            threatShelf
+                        );
+
+                    } else {
+
+                        collapseShelf(
+                            threatShelf
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+
+        /* =====================================================
+           FIRMS SHELF
+        ====================================================== */
+
+        const firmsHeader =
+            document.getElementById(
+                "firmsShelfHeader"
+            );
+
+        if (firmsHeader) {
+
+            firmsHeader.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                    const isCollapsed =
+                        firmsShelf.classList.contains(
+                            "collapsed"
+                        );
+
+                    closeOtherShelves(
+                        firmsShelf
+                    );
+
+                    if (isCollapsed) {
+
+                        expandShelf(
+                            firmsShelf
+                        );
+
+                    } else {
+
+                        collapseShelf(
+                            firmsShelf
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+
+        /* =====================================================
+           RISK SHELF
+        ====================================================== */
+
+        const riskHeader =
+            document.getElementById(
+                "riskShelfHeader"
+            );
+
+        if (riskHeader) {
+
+            riskHeader.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                    const isCollapsed =
+                        riskShelf.classList.contains(
+                            "collapsed"
+                        );
+
+                    closeOtherShelves(
+                        riskShelf
+                    );
+
+                    if (isCollapsed) {
+
+                        expandShelf(
+                            riskShelf
+                        );
+
+                    } else {
+
+                        collapseShelf(
+                            riskShelf
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+
+        /* =====================================================
+           MISSION STATUS
+        ====================================================== */
+
+        const missionHeader =
+            document.getElementById(
+                "missionHeader"
+            );
+
+        if (missionHeader) {
+
+            missionHeader.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                    const isExpanded =
+                        missionPanel.classList.contains(
+                            "mission-expanded"
+                        );
+
+                    if (isExpanded) {
+
+                        missionPanel.classList.remove(
+                            "mission-expanded"
+                        );
+
+                    } else {
+
+                        missionPanel.classList.add(
+                            "mission-expanded"
+                        );
+
+                    }
+
+                }
+            );
+        }
+
+
+
+        /* =====================================================
+           KPI CARDS
+        ====================================================== */
+
+        document
+            .querySelectorAll(".kpi-card")
+            .forEach(
+                function (card) {
+
+                    card.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.stopPropagation();
+
+                            card.style.transform =
+                                "translateY(-2px)";
+
+                            setTimeout(
+                                function () {
+
+                                    card.style.transform =
+                                        "";
+
+                                },
+                                180
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+
+        /* =====================================================
+           CLOSE SHELVES WHEN CLICKING MAP
+        ====================================================== */
+
+        document
+            .getElementById("mapStage")
+            .addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target.closest(
+                            ".floating-shelf"
+                        )
+                    ) {
+                        return;
+                    }
+
+                    collapseShelf(
+                        threatShelf
+                    );
+
+                    collapseShelf(
+                        firmsShelf
+                    );
+
+                    collapseShelf(
+                        riskShelf
+                    );
+
+                }
+            );
+
+
+
+        /* =====================================================
+           ESC KEY
+        ====================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape"
+                ) {
+
+                    collapseShelf(
+                        threatShelf
+                    );
+
+                    collapseShelf(
+                        firmsShelf
+                    );
+
+                    collapseShelf(
+                        riskShelf
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           MISSION STATUS LIVE SYNC
+        ====================================================== */
+
+        function syncMissionStatus() {
+
+            const critical =
+                document.getElementById(
+                    "criticalCount"
+                );
+
+            const high =
+                document.getElementById(
+                    "highRiskCount"
+                );
+
+            const persistent =
+                document.getElementById(
+                    "persistentCount"
+                );
+
+            const industrial =
+                document.getElementById(
+                    "industrialCount"
+                );
+
+            const hotspots =
+                document.getElementById(
+                    "hotspotCount"
+                );
+
+
+            if (critical) {
+
+                document.getElementById(
+                    "missionCritical"
+                ).textContent =
+                    critical.textContent || "0";
+
+            }
+
+
+            if (high) {
+
+                document.getElementById(
+                    "missionHigh"
+                ).textContent =
+                    high.textContent || "0";
+
+            }
+
+
+            if (persistent) {
+
+                document.getElementById(
+                    "missionPersistent"
+                ).textContent =
+                    persistent.textContent || "0";
+
+            }
+
+
+            if (industrial) {
+
+                document.getElementById(
+                    "missionIndustrial"
+                ).textContent =
+                    industrial.textContent || "0";
+
+            }
+
+
+            if (hotspots) {
+
+                document.getElementById(
+                    "firmsHotspotCount"
+                ).textContent =
+                    hotspots.textContent || "0";
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           WATCH EXISTING KPI VALUES
+        ====================================================== */
+
+        const watchedIds = [
+
+            "criticalCount",
+
+            "highRiskCount",
+
+            "persistentCount",
+
+            "industrialCount",
+
+            "hotspotCount"
+
+        ];
+
+
+        watchedIds.forEach(
+            function (id) {
+
+                const element =
+                    document.getElementById(
+                        id
+                    );
+
+                if (!element) return;
+
+
+                const observer =
+                    new MutationObserver(
+                        syncMissionStatus
+                    );
+
+
+                observer.observe(
+                    element,
+                    {
+                        childList: true,
+                        characterData: true,
+                        subtree: true
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* Initial synchronization */
+
+        syncMissionStatus();
+
+
+        setInterval(
+            syncMissionStatus,
+            1000
+        );
+
+
+
+        /* =====================================================
+           GLOBE PRESENTATION
+        ====================================================== */
+
+        setTimeout(
+            function () {
+
+                if (
+                    typeof thermoguardMap !==
+                    "undefined"
+                ) {
+
+                    thermoguardMap.invalidateSize();
+
+                    /*
+                        Zoom level 5 gives a broader
+                        Earth-region view while the
+                        CSS globe animation provides
+                        the 3D presentation.
+                    */
+
+                    thermoguardMap.setZoom(
+                        5
+                    );
+
+                }
+
+            },
+            1800
+        );
+
+
+
+        /* =====================================================
+           RESPONSIVE MAP REFRESH
+        ====================================================== */
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                if (
+                    typeof thermoguardMap !==
+                    "undefined"
+                ) {
+
+                    setTimeout(
+                        function () {
+
+                            thermoguardMap.invalidateSize();
+
+                        },
+                        150
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           GLOBE INTERACTION
+        ====================================================== */
+
+        const globeShell =
+            document.getElementById(
+                "globeShell"
+            );
+
+
+        if (globeShell) {
+
+            globeShell.addEventListener(
+                "mouseenter",
+                function () {
+
+                    globeShell.style.animationPlayState =
+                        "paused";
+
+                }
+            );
+
+
+            globeShell.addEventListener(
+                "mouseleave",
+                function () {
+
+                    globeShell.style.animationPlayState =
+                        "running";
+
+                }
+            );
+
+        }
+
+
+
+        console.log(
+            "ThermoGuard AI — Premium 3D Globe Command Center ready."
+        );
+
+    }
+
+);
+
+</script>
+
+</body>
+</html>
